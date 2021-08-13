@@ -189,7 +189,6 @@ public class VolumeDialogImpl implements VolumeDialog {
 
     private SettingsObserver settingsObserver;
     private boolean mExpanded;
-    private boolean mLeftVolumeRocker;
     private boolean mAppVolume;
 
     public VolumeDialogImpl() {}
@@ -207,7 +206,6 @@ public class VolumeDialogImpl implements VolumeDialog {
         mShowActiveStreamOnly = showActiveStreamOnly();
         mHasSeenODICaptionsTooltip =
                 Prefs.getBoolean(sysuiContext, Prefs.Key.HAS_SEEN_ODI_CAPTIONS_TOOLTIP, false);
-        mLeftVolumeRocker = Settings.System.getInt(mContext.getContentResolver(), Settings.System.VOLUME_PANEL_ON_LEFT, 0) == 1;
         settingsObserver = new SettingsObserver(mHandler);
         settingsObserver.observe();
     }
@@ -317,23 +315,13 @@ public class VolumeDialogImpl implements VolumeDialog {
         LinearLayout.LayoutParams captionsLP =
                 (LinearLayout.LayoutParams) mODICaptionsView.getLayoutParams();
 
-        if(!isAudioPanelOnLeftSide()) {
-            mainLP.gravity = Gravity.RIGHT;
-            ringerLP.gravity = Gravity.RIGHT;
-            mExpandRows.setRotation(90);
-            dummyButtonLP.gravity = Gravity.LEFT;
-            mediaOutputLP.gravity = Gravity.LEFT;
-            expandRowsLP.gravity = Gravity.RIGHT;
-            captionsLP.gravity = Gravity.RIGHT;
-        } else {
-            mainLP.gravity = Gravity.LEFT;
-            ringerLP.gravity = Gravity.LEFT;
-            mExpandRows.setRotation(-90);
-            dummyButtonLP.gravity = Gravity.RIGHT;
-            mediaOutputLP.gravity = Gravity.RIGHT;
-            expandRowsLP.gravity = Gravity.LEFT;
-            captionsLP.gravity = Gravity.LEFT;
-        }
+        mainLP.gravity = Gravity.RIGHT;
+        ringerLP.gravity = Gravity.RIGHT;
+        mExpandRows.setRotation(90);
+        dummyButtonLP.gravity = Gravity.LEFT;
+        mediaOutputLP.gravity = Gravity.LEFT;
+        expandRowsLP.gravity = Gravity.RIGHT;
+        captionsLP.gravity = Gravity.RIGHT;
 
         mDialog.findViewById(R.id.main).setLayoutParams(mainLP);
         mDialog.findViewById(R.id.dummy_button).setLayoutParams(dummyButtonLP);
@@ -457,11 +445,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         if (D.BUG) Slog.d(TAG, "Adding row for stream " + stream);
         VolumeRow row = new VolumeRow();
         initRow(row, stream, iconRes, iconMuteRes, important, defaultStream);
-        if(!isAudioPanelOnLeftSide()){
-            mDialogRowsView.addView(row.view);
-        } else {
-            mDialogRowsView.addView(row.view);
-        }
+        mDialogRowsView.addView(row.view);
         mRows.add(row);
     }
 
@@ -506,11 +490,7 @@ public class VolumeDialogImpl implements VolumeDialog {
             final VolumeRow row = mRows.get(i);
             initRow(row, row.stream, row.iconRes, row.iconMuteRes, row.important,
                     row.defaultStream);
-            if(!isAudioPanelOnLeftSide()){
-                mDialogRowsView.addView(row.view, 0);
-            } else {
-                mDialogRowsView.addView(row.view);
-            }
+            mDialogRowsView.addView(row.view, 0);
             updateVolumeRowH(row);
         }
     }
@@ -932,7 +912,7 @@ public class VolumeDialogImpl implements VolumeDialog {
         mDialog.getViewTreeObserver().addOnComputeInternalInsetsListener(mInsetsListener);
 
         if(!mShowing && !mDialog.isShown()) {
-            if (!isLandscape()) mDialogView.setTranslationX((mDialogView.getWidth() / 2.0f)*(isAudioPanelOnLeftSide() ? -1 : 1));
+            if (!isLandscape()) mDialogView.setTranslationX(mDialogView.getWidth() / 2.0f);
             mDialogView.setAlpha(0);
             mDialogView.animate()
                     .alpha(1)
@@ -1023,7 +1003,7 @@ public class VolumeDialogImpl implements VolumeDialog {
                     mExpandRows.setExpanded(mExpanded);
                     tryToRemoveCaptionsTooltip();
                 }, 50));
-        if (!isLandscape()) animator.translationX((mDialogView.getWidth() / 2.0f)*(isAudioPanelOnLeftSide() ? -1 : 1));
+        if (!isLandscape()) animator.translationX(mDialogView.getWidth() / 2.0f);
         animator.start();
 	mDialog.getViewTreeObserver().removeOnComputeInternalInsetsListener(mInsetsListener);
         checkODICaptionsTooltip(true);
@@ -1696,10 +1676,6 @@ public class VolumeDialogImpl implements VolumeDialog {
             rescheduleTimeoutH();
             return super.onRequestSendAccessibilityEvent(host, child, event);
         }
-    }
-
-    private boolean isAudioPanelOnLeftSide() {
-        return mLeftVolumeRocker;
     }
 
     private static class VolumeRow {
